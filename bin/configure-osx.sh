@@ -119,7 +119,7 @@ fi
 printf "Enter your redis host [127.0.0.1]: "
 read REDIS_HOST
 if  [ "${REDIS_HOST}" == "" ]; then
-    DB_PORT="REDIS_HOST"
+    REDIS_HOST="127.0.0.1"
 fi
 printf "Force visitors to https? (y or n): "
 read -n 1 FORCE_SSL
@@ -128,12 +128,12 @@ if  [ "${FORCE_SSL}" == "y" ]; then
 else
     FORCE_SSL="false"
 fi
-printf "Debug (Not recommended for production environments) (y or n): "
+printf "\nDebug (Not recommended for production environments) (y or n): "
 read -n 1 DEBUG
-if  [ "${{DEBUG}" == "n" ]; then
-    DEBUG=0
+if  [ "${DEBUG}" == "n" ]; then
+    DEBUG="0"
 else
-    DEBUG=1
+    DEBUG="1"
 fi
 
 printf "\n"
