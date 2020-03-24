@@ -20,7 +20,7 @@ local function new()
     -- @param sep The separator to use (optional)
     -- @param key The parent key if the value is multi-dimensional (optional)
     -- @return a string representing the built querystring
-    function helpers.build_query(tab, sep, key)
+    function helpers.format_query(tab, sep, key)
         local query = {}
         if not sep then
             sep = '&'
@@ -37,7 +37,7 @@ local function new()
                 name = string.format('%s[%s]', tostring(key), tostring(name))
             end
             if type(value) == 'table' then
-                query[#query+1] = helpers.build_query(value, sep, name)
+                query[#query+1] = helpers.format_query(value, sep, name)
             else
                 local value = encodeValue(tostring(value))
                 if value ~= "" then
@@ -51,15 +51,13 @@ local function new()
     end
 
     -- function for producing the search url for demotivational images
-    function helpers.get_search_url()
+    function helpers.get_search_url(query)
         local base_url = 'https://www.googleapis.com/customsearch/v1?'
         local params = {
-            key     = ngx.var.GOOGLE_SEARCH_KEY,
-            cx      = ngx.var.GOOGLE_SEARCH_ENGINE_ID,
-            q       = 'demotivational',
+            q       = query,
             imgType = 'photo'
         }
-        local url = base_url .. helpers.build_query(params)
+        local url = base_url .. helpers.format_query(params)
         return url
     end
 

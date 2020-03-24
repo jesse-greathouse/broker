@@ -1,5 +1,8 @@
 # Created by .ignore support plugin (hsz.mobi)
 
+#vscode junk
+*.vscode/
+
 # ds stores
 *.DS_Store
 
