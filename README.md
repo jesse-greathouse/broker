@@ -1,15 +1,15 @@
-greathouse-openresty
+broker
 ====
 # How to Install
 These instructions assume that you've already created a useable database for your application, along with having the required credentials. If you do not need a database, you can ignore the database credentials or set them as placeholders for later. If you need help on creating a database, you can [learn how, here](https://www.postgresql.org/docs/10/tutorial-install.html).
 
 * Download the git repository
-    * `git clone https://github.com/jesse-greathouse/greathouse-openresty`
-* Change to the greathouse-openresty directory
-    * `cd greathouse-openresty`
+    * `git clone https://github.com/jesse-greathouse/broker`
+* Change to the broker directory
+    * `cd broker`
 
 ## Docker Installation
-* The easiest way to run greathouse-openresty is with Docker. You will need to install docker on your web host. Check the [Official Docker Site](https://docs.docker.com/engine/installation/) on how to install Docker on your host.
+* The easiest way to run broker is with Docker. You will need to install docker on your web host. Check the [Official Docker Site](https://docs.docker.com/engine/installation/) on how to install Docker on your host.
     * [Ubuntu](https://docs.docker.com/engine/installation/linux/ubuntu/)
     * [Red Hat Enterprise Linux](https://docs.docker.com/engine/installation/linux/rhel/)
     * [CentOs](https://docs.docker.com/engine/installation/linux/centos/)
@@ -26,10 +26,10 @@ These instructions assume that you've already created a useable database for you
 
 # Docker Management Instructions
 ## Building the App
-    docker build -t jessegreathouse/greathouse-openresty .
+    docker build -t jessegreathouse/broker .
 
 ## Pushing the App
-    docker push jessegreathouse/greathouse-openresty
+    docker push jessegreathouse/broker
 
 ## Running the APP
     docker run -d -p 3000:3000 \
@@ -57,9 +57,9 @@ These instructions assume that you've already created a useable database for you
         -v $(pwd)/etc/nginx/nginx.conf:/app/etc/nginx/nginx.conf \
         --restart no \
         --name my-site \
-        jessegreathouse/greathouse-openresty
+        jessegreathouse/broker
 
 * check [http://localhost:3000/](http://localhost:3000/)
 
 # Running Tests
-    docker exec -ti greathouse-openrestys run_tests.sh
+    docker exec -ti broker run_tests.sh

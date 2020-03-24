@@ -22,7 +22,7 @@
 #   +---------------------------------------------------------------------------------+
 
 # chkconfig: 2345 20 80
-# description: A  greathouse-openresty startup script for init.d flavored systems
+# description: A broker startup script for init.d flavored systems
 
 # Source function library.
 . /etc/init.d/functions

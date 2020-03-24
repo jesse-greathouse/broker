@@ -76,10 +76,10 @@ printf "=================================================================\n"
 printf "Hello, "${USER}".  This will create your site's run script\n"
 printf "=================================================================\n"
 printf "\n"
-printf "Enter your name of your site [${USER}]: "
+printf "Enter your name of your site [broker]: "
 read SITE_NAME
 if  [ "${SITE_NAME}" == "" ]; then
-    SITE_NAME=${USER}
+    SITE_NAME="broker"
 fi
 printf "Enter the domains of your site [127.0.0.1 localhost]: "
 read SITE_DOMAINS

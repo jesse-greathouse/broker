@@ -1,4 +1,4 @@
-greathouse-openresty
+broker
 ====
 # How to Install
 These instructions assume that you've already created a useable database for your application, along with having the required credentials. If you do not need a database, you can ignore the database credentials or set them as placeholders for later. If you need help on creating a database, you can [learn how, here](https://www.postgresql.org/docs/10/tutorial-install.html).
@@ -26,7 +26,7 @@ These instructions assume that you've already created a useable database for you
 
 # Docker Management Instructions
 ## Building the App
-    docker build -t jessegreathouse/greathouse-openresty .
+    docker build -t jessegreathouse/broker .
 
 ## Pushing the App
     docker push jessegreathouse/greathouse-openresty
@@ -62,4 +62,4 @@ These instructions assume that you've already created a useable database for you
 * check [http://localhost:3000/](http://localhost:3000/)
 
 # Running Tests
-    docker exec -ti greathouse-openrestys run_tests.sh
+    docker exec -ti greathouse-openresty run_tests.sh

@@ -20,13 +20,9 @@
 #   +---------------------------------------------------------------------------------+
 
 FROM alpine:3.8
-MAINTAINER Jesse Greathouse <jesse.greathouse@gmail.com>
+LABEL maintainer="Jesse Greathouse <jesse.greathouse@gmail.com>"
 
 ENV PATH /app/bin:$PATH
-
-# Set the correct timezone in the container
-ENV TZ=America/Chicago
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # Get core utils
 RUN apk add --no-cache \

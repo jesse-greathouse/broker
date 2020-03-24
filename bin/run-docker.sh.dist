@@ -68,7 +68,7 @@ rm -r ${DIR}/supervisord.log
 touch ${DIR}/supervisord.log
 touch ${DIR}/error.log
 
-docker pull jessegreathouse/greathouse-openresty
+docker pull jessegreathouse/broker
 docker kill __SITE_NAME__
 docker rm __SITE_NAME__
 
@@ -100,4 +100,4 @@ docker run -d -p __PORT__:3000 \
     -v $(pwd)/web/:/app/web \
     --restart __RESTART_POLICY__ \
     --name __SITE_NAME__ \
-    jessegreathouse/greathouse-openresty
+    jessegreathouse/broker
