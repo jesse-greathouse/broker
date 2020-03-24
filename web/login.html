@@ -1,0 +1,73 @@
+<h1 class="mt-5">Please login using an available prodivder.</h1>
+<div id="request-response"  role="alert"></div>
+<div class="login-provider-container">
+    <div class="g-signin2" data-longtitle="true" data-width="240" data-height="40" data-onsuccess="onGoogleSignIn"></div>
+    <div class="fb-login-button" data-scope="public_profile,email" data-width="240" data-size="large" data-button-type="login_with" data-layout="default" data-auto-logout-link="true" data-use-continue-as="false" onlogin="checkFacebookLoginState();"></div>
+</div>
+
+<script>
+    // Handle Google Login
+    function onGoogleSignIn(googleUser) {
+        // Wipe any previous error response
+        var $responseBox = $('#request-response');
+        $responseBox.removeClass();
+        $responseBox.append("");
+
+        // Data being passed to the Backend:
+        var profile = googleUser.getBasicProfile();
+        var payload = {
+            id: profile.getId(),
+            name: profile.getName(),
+            given_name: profile.getGivenName(),
+            family_name: profile.getFamilyName(),
+            image_url: profile.getImageUrl(),
+            email: profile.getEmail(),
+            id_token: googleUser.getAuthResponse().id_token
+        };
+
+        // Post results to the backend
+        $.post('/google_auth', payload)
+            .done(function( data ) {
+                if (!data.error) {
+                    location.href = '/';
+                } else {
+                    $responseBox.addClass('alert alert-danger');
+                    $responseBox.append(data.message);
+                }
+            });
+    }
+
+    // Handle Facebook Login
+    function checkFacebookLoginState() {
+        FB.getLoginStatus(function(response) {
+            var token = response.authResponse.accessToken;
+            var id = response.authResponse.userID;
+            var profile_url = '/me?fields=name,first_name,last_name,email';
+            var image_url = 'https://graph.facebook.com/v6.0/' + id + '/picture';
+            FB.api(profile_url, 'GET', {}, function(profile) {
+                var payload = {
+                    id: id,
+                    name: profile.name,
+                    first_name: profile.first_name,
+                    last_name: profile.last_name,
+                    image_url: image_url,
+                    email: profile.email,
+                    token_id: token
+                };
+
+                // Post results to the backend
+                $.post('/facebook_auth', payload)
+                    .done(function( data ) {
+                        if (!data.error) {
+                            location.href = '/';
+                        } else {
+                            $responseBox.addClass('alert alert-danger');
+                            $responseBox.append(data.message);
+                        }
+                    });
+            });
+        });
+    }
+
+
+</script>

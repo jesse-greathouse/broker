@@ -1,0 +1,42 @@
+<h1 id="logout" 
+    data-token-id="{{token.id}}"
+    data-token-type="{{token.type}}" 
+    data-google-type="{{google_type}}" 
+    data-facebook-type="{{facebook_type}}" 
+    class="mt-5" >Come back soon!</h1>
+
+<script>     
+    window.gapiInit = function() {
+        var $logout = $('#logout');
+        gapi.load('auth2', function() {
+            gapi.auth2.init({
+                client_id: $('body').data('gapi-key')
+            }).then(function() {
+                var auth = gapi.auth2.getAuthInstance();
+                if ($logout.length
+                    && ($logout.data('token-type') == $logout.data('google-type'))) {
+                    auth.disconnect().then(function () {
+                        location.href = '/login';
+                    });
+                }
+            });
+        });
+    }
+
+    // Handle Facebook Logout
+    function fapiInit() {
+        var $logout = $('#logout');
+        if ($logout.length
+            && ($logout.data('token-type') == $logout.data('facebook-type'))) {
+            FB.login(function() {
+                FB.getLoginStatus(function(response) {
+                    if (response && response.status === 'connected') {
+                        FB.logout(function(response) {
+                            location.href = '/login';
+                        });
+                    }
+                });
+            });
+        }
+    }
+</script>

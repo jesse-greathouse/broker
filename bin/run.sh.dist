@@ -45,10 +45,6 @@ VAR="$( cd -P "$DIR/var" && pwd )"
 WEB="$( cd -P "$DIR/web" && pwd )"
 PATH=~/Library/Python/2.7/bin:${PATH}
 
-if [ -z "$DEBUG" ]; then
-    DEBUG=true
-fi
-
 if [ -z "$ENV" ]; then
     ENV=local
 fi

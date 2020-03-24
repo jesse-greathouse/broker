@@ -131,9 +131,9 @@ fi
 printf "\nDebug (Not recommended for production environments) (y or n): "
 read -n 1 DEBUG
 if  [ "${DEBUG}" == "n" ]; then
-    DEBUG="0"
+    DEBUG="false"
 else
-    DEBUG="1"
+    DEBUG="true"
 fi
 
 printf "\n"
