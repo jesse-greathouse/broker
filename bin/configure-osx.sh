@@ -204,7 +204,7 @@ fi
 
 printf "Creating startup script...\n"
 
-LAUNCHD_CONF="${ETC}/com.greathouse.technology.${SITE_NAME}.plist"
+LAUNCHD_CONF="${ETC}/com.jesse-greathuse.${SITE_NAME}.plist"
 
 if [ -f ${LAUNCHD_CONF} ]; then
    rm ${LAUNCHD_CONF}

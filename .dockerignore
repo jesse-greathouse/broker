@@ -19,7 +19,6 @@ bin/*
 
 etc/*.plist
 etc/*.conf
-etc/wp-authentication-keys.template.php
 
 etc/init.d
 
@@ -29,18 +28,6 @@ etc/nginx/*-e
 
 etc/php/*
 
-web/wp-content/plugins/*
-!web/wp-content/plugins/akismet
-!web/wp-content/plugins/hello.php
-!web/wp-content/plugins/index.php
-
-web/wp-content/themes/*
-!web/wp-content/themes/twentyfifteen
-!web/wp-content/themes/twentysixteen
-!web/wp-content/themes/twentyseventeen
-!web/wp-content/themes/index.php
-
-web/wp-content/uploads
-web/wp-authentication-keys.php
+web/*
 
 

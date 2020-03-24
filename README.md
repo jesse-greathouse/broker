@@ -1,5 +1,7 @@
 broker
 ====
+Exchange the results of a web request into a different format
+
 # How to Install
 These instructions assume that you've already created a useable database for your application, along with having the required credentials. If you do not need a database, you can ignore the database credentials or set them as placeholders for later. If you need help on creating a database, you can [learn how, here](https://www.postgresql.org/docs/10/tutorial-install.html).
 

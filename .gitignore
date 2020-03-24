@@ -8,8 +8,6 @@
 
 # bin
 *-e
-/app/bootstrap.php.cache
-/var/bootstrap.php.cache
 /bin/*
 !bin/wp.dist
 !bin/install-amazon.sh
@@ -30,9 +28,6 @@
 !bin/configure-ubuntu.sh
 !bin/configure-centos.sh
 !bin/configure-rhel.sh
-!bin/get-unique-keys.sh
-!bin/phpunit
-
 
 # etc
 etc/php/php.ini
@@ -43,16 +38,15 @@ etc/*.conf
 etc/init.d/*.sh
 etc/*.plist
 !etc/com.greathouse.technology.template.plist
-!etc/wp-authentication-keys.template.php
 
 # opt
-opt/php/
-opt/openresty/
-opt/wordpress*
+opt/php/*
+opt/openresty*/*
 
 # cache and logs
 error.log
-var/
+var/cache/*
+var/logs/*
 !var/cache/.gitkeep
 !var/logs/.gitkeep
 tmp/
@@ -68,8 +62,3 @@ supervisord.log
 supervisord.pid
 
 # web
-web/*
-!web/wp-config.php
-!web/wp-content/plugins/*
-!web/wp-content/themes/*
-
