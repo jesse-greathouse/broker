@@ -75,6 +75,9 @@ sudo apt-get install -y \
 # Compile and Install Openresty
 tar -xzf ${OPT}/openresty-*.tar.gz -C ${OPT}/
 
+# Fix the escape frontslash feature of cjson
+sed -i -e s/"    NULL, NULL, NULL, NULL, NULL, NULL, NULL, \"\\\\\\\\\/\","/"    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,"/g ${OPT}/openresty-*/bundle/lua-cjson-2.1.0.7/lua_cjson.c
+
 cd ${OPT}/openresty-*/
 ./configure --with-cc-opt="-I/usr/local/include -I/usr/local/opt/openssl/include" \
             --with-ld-opt="-L/usr/local/lib -L/usr/local/opt/openssl/lib" \
@@ -91,5 +94,4 @@ cd ${DIR}
 rm -rf ${OPT}/openresty-*/
 ln -sf ${OPT}/openresty/nginx/sbin/nginx ${BIN}/nginx
 
-${BIN}/install-wordpress.sh
 ${BIN}/configure-ubuntu.sh

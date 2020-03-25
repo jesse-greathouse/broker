@@ -40,6 +40,18 @@ local function new()
         view:render()
     end
 
+    function views.google()
+        local session = get_session()
+        local gsearch = require "clients.gsearch"
+        local res, err = gsearch.search(ngx.req.get_uri_args())
+
+        if err.error then
+            ngx.say(cjson.encode(err))
+        else
+            ngx.say(res.body)
+        end
+    end
+
     function views.login()
         require "resty.session".start()
         get_session()
