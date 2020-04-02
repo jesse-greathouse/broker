@@ -2,3 +2,13 @@
 
 # 301 redirect example
 # rewrite  "^/controller/action/([0-9A-Za-z\-]+)-([A-Za-z]{2})(/)?(.*)?" /search/$2-$1 permanent;
+
+# google rewrite sub-searches
+# rewrite  "^(/google/search)?((.*)(tbm=([a-z]+)&amp;)(.*))" $1/$5?$2 permanent;
+
+# google rewrite link to closure library
+rewrite  "^/xjs/_/js/.*" /xjs/closure-library.js break;
+
+# google rewrite link to tracking pixel
+rewrite  "^/client_204.*" /pixel break;
+rewrite  "^/gen_204.*" /pixel break;

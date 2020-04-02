@@ -1,0 +1,32 @@
+{* body *}
+
+<script>
+    function google_image_search() {
+        var $navLink = $('.gb1');
+        var $body = $('body');
+        var tbmTable = {
+            images:     'isch',
+            news:       'nws',
+            video:      'vid',
+            maps:       'map',
+            shopping:   'shop',
+            books:      'bks'
+        }
+        
+        $navLink.click(function(e) {
+            e.preventDefault();
+            var url = $(this).attr('href');
+            var qs = $body.data('qs');
+            var key = $(this).text().toLowerCase();
+            if (typeof qs !== 'undefined') {
+                var replacement = ''
+                if (key in tbmTable) {
+                    replacement = '&tbm=' + tbmTable[key];
+                }
+                qs = qs.replace(/&tbm=([0-9A-Za-z]+)/, replacement);
+                url = url + qs
+            }
+            window.location.href = url
+        });
+    }
+</script>

@@ -20,9 +20,12 @@ Production ready.
 
 # API
 
-* [new](#name)
+* [new](#new)
 * [connect](#connect)
+* [connect_proxy](#connect_proxy)
+* [set_proxy_options](#set_proxy_options)
 * [set_timeout](#set_timeout)
+* [set_timeouts](#set_timeouts)
 * [ssl_handshake](#ssl_handshake)
 * [set_keepalive](#set_keepalive)
 * [get_reused_times](#get_reused_times)
@@ -33,7 +36,7 @@ Production ready.
 * [Response](#response)
     * [body_reader](#resbody_reader)
     * [read_body](#resread_body)
-    * [read_trailes](#resread_trailers)
+    * [read_trailers](#resread_trailers)
 * [Proxy](#proxy)
     * [proxy_request](#proxy_request)
     * [proxy_response](#proxy_response)
@@ -53,7 +56,7 @@ server {
   location /simpleinterface {
     resolver 8.8.8.8;  # use Google's open DNS server for an example
 
-    content_by_lua '
+    content_by_lua_block {
 
       -- For simple singleshot requests, use the URI interface.
       local http = require "resty.http"
@@ -63,7 +66,9 @@ server {
         body = "a=1&b=2",
         headers = {
           ["Content-Type"] = "application/x-www-form-urlencoded",
-        }
+        },
+        keepalive_timeout = 60,
+        keepalive_pool = 10
       })
 
       if not res then
@@ -82,12 +87,12 @@ server {
       end
 
       ngx.say(res.body)
-    ';
+    }
   }
 
 
   location /genericinterface {
-    content_by_lua '
+    content_by_lua_block {
 
       local http = require "resty.http"
       local httpc = http.new()
@@ -97,12 +102,12 @@ server {
       httpc:connect("127.0.0.1", 80)
 
       -- And request using a path, rather than a full URI.
-      local res, err = httpc:request{
+      local res, err = httpc:request({
           path = "/helloworld",
           headers = {
               ["Host"] = "example.com",
           },
-      }
+      })
 
       if not res then
         ngx.say("failed to request: ", err)
@@ -129,7 +134,7 @@ server {
         ngx.say("failed to set keepalive: ", err)
         return
       end
-    ';
+    }
   }
 }
 ````
@@ -157,17 +162,42 @@ An optional Lua table can be specified as the last argument to this method to sp
 * `pool`
 : Specifies a custom name for the connection pool being used. If omitted, then the connection pool name will be generated from the string template `<host>:<port>` or `<unix-socket-path>`.
 
+## connect_proxy
+
+`syntax: ok, err = httpc:connect_proxy(proxy_uri, scheme, host, port, proxy_authorization)`
+
+Attempts to connect to the web server through the given proxy server. The method accepts the following arguments:
+
+* `proxy_uri` - Full URI of the proxy server to use (e.g. `http://proxy.example.com:3128/`). Note: Only `http` protocol is supported.
+* `scheme` - The protocol to use between the proxy server and the remote host (`http` or `https`). If `https` is specified as the scheme, `connect_proxy()` makes a `CONNECT` request to establish a TCP tunnel to the remote host through the proxy server.
+* `host` - The hostname of the remote host to connect to.
+* `port` - The port of the remote host to connect to.
+* `proxy_authorization` - The `Proxy-Authorization` header value sent to the proxy server via `CONNECT` when the `scheme` is `https`.
+
+If an error occurs during the connection attempt, this method returns `nil` with a string describing the error. If the connection was successfully established, the method returns `1`.
+
+There's a few key points to keep in mind when using this api:
+
+* If the scheme is `https`, you need to perform the TLS handshake with the remote server manually using the `ssl_handshake()` method before sending any requests through the proxy tunnel.
+* If the scheme is `http`, you need to ensure that the requests you send through the connections conforms to [RFC 7230](https://tools.ietf.org/html/rfc7230) and especially [Section 5.3.2.](https://tools.ietf.org/html/rfc7230#section-5.3.2) which states that the request target must be in absolute form. In practice, this means that when you use `send_request()`, the `path` must be an absolute URI to the resource (e.g. `http://example.com/index.html` instead of just `/index.html`).
+
 ## set_timeout
 
 `syntax: httpc:set_timeout(time)`
 
 Sets the timeout (in ms) protection for subsequent operations, including the `connect` method.
 
+## set_timeouts
+
+`syntax: httpc:set_timeouts(connect_timeout, send_timeout, read_timeout)`
+
+Sets the connect timeout threshold, send timeout threshold, and read timeout threshold, respectively, in milliseconds, for subsequent socket operations (connect, send, receive, and iterators returned from receiveuntil).
+
 ## ssl_handshake
 
 `syntax: session, err = httpc:ssl_handshake(session, host, verify)`
 
-Performs an SSL handshake on the TCP connection, only availble in ngx_lua > v0.9.11
+Performs an SSL handshake on the TCP connection, only available in ngx_lua > v0.9.11
 
 See docs for [ngx.socket.tcp](https://github.com/openresty/lua-nginx-module#ngxsockettcp) for details.
 
@@ -179,11 +209,25 @@ Attempts to puts the current connection into the ngx_lua cosocket connection poo
 
 You can specify the max idle timeout (in ms) when the connection is in the pool and the maximal size of the pool every nginx worker process.
 
-Only call this method in the place you would have called the `close` method instead. Calling this method will immediately turn the current http object into the `closed` state. Any subsequent operations other than `connect()` on the current objet will return the `closed` error.
+Only call this method in the place you would have called the `close` method instead. Calling this method will immediately turn the current http object into the `closed` state. Any subsequent operations other than `connect()` on the current object will return the `closed` error.
 
 Note that calling this instead of `close` is "safe" in that it will conditionally close depending on the type of request. Specifically, a `1.0` request without `Connection: Keep-Alive` will be closed, as will a `1.1` request with `Connection: Close`.
 
-In case of success, returns `1`. In case of errors, returns `nil, err`. In the case where the conneciton is conditionally closed as described above, returns `2` and the error string `connection must be closed`.
+In case of success, returns `1`. In case of errors, returns `nil, err`. In the case where the connection is conditionally closed as described above, returns `2` and the error string `connection must be closed`.
+
+## set_proxy_options
+
+`syntax: httpc:set_proxy_options(opts)`
+
+Configure an http proxy to be used with this client instance. The `opts` is a table that accepts the following fields:
+
+* `http_proxy` - an URI to a proxy server to be used with http requests
+* `http_proxy_authorization` - a default `Proxy-Authorization` header value to be used with `http_proxy`, e.g. `Basic ZGVtbzp0ZXN0`, which will be overriden if the `Proxy-Authorization` request header is present.
+* `https_proxy` - an URI to a proxy server to be used with https requests
+* `https_proxy_authorization` - as `http_proxy_authorization` but for use with `https_proxy`.
+* `no_proxy` - a comma separated list of hosts that should not be proxied.
+
+Note that proxy options are only applied when using the high-level `request_uri()` API.
 
 ## get_reused_times
 
@@ -215,6 +259,7 @@ The `params` table accepts the following fields:
 * `version` The HTTP version number, currently supporting 1.0 or 1.1.
 * `method` The HTTP method string.
 * `path` The path string.
+* `query` The query string, presented as either a literal string or Lua table..
 * `headers` A table of request headers.
 * `body` The request body as a string, or an iterator function (see [get_client_body_reader](#get_client_body_reader)).
 * `ssl_verify` Verify SSL cert matches hostname
@@ -224,7 +269,7 @@ When the request is successful, `res` will contain the following fields:
 * `status` The status code.
 * `reason` The status reason phrase.
 * `headers` A table of headers. Multiple headers with the same field name will be presented as a table of values.
-* `has_body` A boolean flag indicating if there is a body to be read. 
+* `has_body` A boolean flag indicating if there is a body to be read.
 * `body_reader` An iterator function for reading the body in a streaming fashion.
 * `read_body` A method to read the entire body into a string.
 * `read_trailers` A method to merge any trailers underneath the headers, after reading the body.
@@ -234,6 +279,12 @@ When the request is successful, `res` will contain the following fields:
 `syntax: res, err = httpc:request_uri(uri, params)`
 
 The simple interface. Options supplied in the `params` table are the same as in the generic interface, and will override components found in the uri itself.
+
+There are 3 additional parameters for controlling keepalives:
+
+* `keepalive` Set to `false` to disable keepalives and immediately close the connection.
+* `keepalive_timeout` The maximal idle timeout (ms). Defaults to `lua_socket_keepalive_timeout`.
+* `keepalive_pool` The maximum number of connections in the pool. Defaults to `lua_socket_pool_size`.
 
 In this mode, there is no need to connect manually first. The connection is made on your behalf, suiting cases where you simply need to grab a URI without too much hassle.
 
@@ -357,9 +408,11 @@ Sets the current response based on the given `res`. Ensures that hop-by-hop head
 
 ## parse_uri
 
-`syntax: local scheme, host, port, path = unpack(httpc:parse_uri(uri))`
+`syntax: local scheme, host, port, path, query? = unpack(httpc:parse_uri(uri, query_in_path?))`
 
-This is a convenience function allowing one to more easily use the generic interface, when the input data is a URI. 
+This is a convenience function allowing one to more easily use the generic interface, when the input data is a URI.
+
+As of version `0.10`, the optional `query_in_path` parameter was added, which specifies whether the querystring is to be included in the `path` return value, or separately as its own return value. This defaults to `true` in order to maintain backwards compatibility. When set to `false`, `path` will only include the path, and `query` will contain the URI args, not including the `?` delimiter.
 
 
 ## get_client_body_reader
@@ -398,7 +451,7 @@ local res, err = httpc:request{
 }
 ```
 
-If `sock` is specified, 
+If `sock` is specified,
 
 # Author
 

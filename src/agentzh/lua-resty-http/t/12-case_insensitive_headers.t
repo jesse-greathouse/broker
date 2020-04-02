@@ -1,128 +1,125 @@
-# vim:set ft= ts=4 sw=4 et:
-
-use Test::Nginx::Socket;
+use Test::Nginx::Socket 'no_plan';
 use Cwd qw(cwd);
-
-plan tests => repeat_each() * (blocks() * 4);
 
 my $pwd = cwd();
 
+$ENV{TEST_COVERAGE} ||= 0;
+
 our $HttpConfig = qq{
-    lua_package_path "$pwd/lib/?.lua;;";
-    error_log logs/error.log debug;
+lua_package_path "$pwd/lib/?.lua;;";
+
+init_by_lua_block {
+    if $ENV{TEST_COVERAGE} == 1 then
+        jit.off()
+        require("luacov.runner").init()
+    end
+}
+
+underscores_in_headers On;
 };
 
-$ENV{TEST_NGINX_RESOLVER} = '8.8.8.8';
-
 no_long_string();
-#no_diff();
+no_diff();
 
 run_tests();
 
 __DATA__
-=== TEST 1: Test header normalisation
+=== TEST 1: Unit test header normalisation
 --- http_config eval: $::HttpConfig
 --- config
-    location = /a {
-        content_by_lua '
-            local http_headers = require "resty.http_headers"
+location = /a {
+    content_by_lua_block {
+        local headers = require("resty.http_headers").new()
 
-            local headers = http_headers.new()
+        headers["content-length"] = "a"
+        headers["TRANSFER-ENCODING"] = "b"
+        headers["SSL_CLIENT_CERTIFICATE"] = "foo"
 
-            headers.x_a_header = "a"
-            headers["x-b-header"] = "b"
-            headers["X-C-Header"] = "c"
-            headers["X_d-HEAder"] = "d"
+        assert(headers["coNtENt-LENgth"] == headers["content-length"],
+            "header values should match")
 
-            ngx.say(headers["X-A-Header"])
-            ngx.say(headers.x_b_header)
-            
-            for k,v in pairs(headers) do
-                ngx.say(k, ": ", v)
-            end
-        ';
+        assert(headers["transfer-encoding"] == headers["TRANSFER-ENCODING"],
+            "header values should match")
+
+        assert(headers["ssl_client_certificate"] == headers["SSL_CLIENT_CERTIFICATE"],
+            "header values should match")
+
+        assert(headers["SSL-CLIENT-CERTIFICATE"] ~= headers["SSL_CLIENT_CERTIFICATE"],
+            "underscores are separate to hyphens")
+
     }
+}
 --- request
 GET /a
 --- response_body
-a
-b
-x-b-header: b
-x-a-header: a
-X-d-HEAder: d
-X-C-Header: c
 --- no_error_log
 [error]
-[warn]
 
 
-=== TEST 2: Test headers can be accessed in all cases
+=== TEST 2: Integration test headers normalisation
 --- http_config eval: $::HttpConfig
 --- config
-    location = /a {
-        content_by_lua '
-            local http = require "resty.http"
-            local httpc = http.new()
-            httpc:connect("127.0.0.1", ngx.var.server_port)
+location = /a {
+    content_by_lua_block {
+        local httpc = require("resty.http").new()
+        assert(httpc:connect("127.0.0.1", ngx.var.server_port),
+            "connect should return positively")
 
-            local res, err = httpc:request{
-                path = "/b"
-            }
+        local res, err = httpc:request{
+            path = "/b"
+        }
 
-            ngx.status = res.status
-            ngx.say(res.headers["X-Foo-Header"])
-            ngx.say(res.headers["x-fOo-heaDeR"])
-            ngx.say(res.headers.x_foo_header)
-            
-            httpc:close()
-        ';
+        ngx.status = res.status
+        ngx.say(res.headers["X-Foo-Header"])
+        ngx.say(res.headers["x-fOo-heaDeR"])
+
+        httpc:close()
     }
-    location = /b {
-        content_by_lua '
-            ngx.header["X-Foo-Header"] = "bar"
-            ngx.say("OK")
-        ';
+}
+location = /b {
+    content_by_lua_block {
+        ngx.header["X-Foo-Header"] = "bar"
+        ngx.say("OK")
     }
+}
 --- request
 GET /a
 --- response_body
 bar
 bar
-bar
 --- no_error_log
 [error]
-[warn]
 
 
-=== TEST 3: Test request headers are normalised
+=== TEST 3: Integration test request headers normalisation
 --- http_config eval: $::HttpConfig
 --- config
-    location = /a {
-        content_by_lua '
-            local http = require "resty.http"
-            local httpc = http.new()
-            httpc:connect("127.0.0.1", ngx.var.server_port)
+location = /a {
+    content_by_lua_block {
+        local httpc = require("resty.http").new()
+        assert(httpc:connect("127.0.0.1", ngx.var.server_port),
+            "connect should return positively")
 
-            local res, err = httpc:request{
-                path = "/b",
-                headers = {
-                    ["uSeR-AgENT"] = "test_user_agent",
-                    x_foo = "bar",
-                },
-            }
+        local res, err = httpc:request{
+            path = "/b",
+            headers = {
+                ["uSeR-AgENT"] = "test_user_agent",
+                ["X_Foo"] = "bar",
+            },
+        }
 
-            ngx.status = res.status
-            ngx.print(res:read_body())
-            
-            httpc:close()
-        ';
+        ngx.status = res.status
+        ngx.print(res:read_body())
+
+        httpc:close()
     }
-    location = /b {
-        content_by_lua '
-            ngx.say(ngx.req.get_headers()["User-Agent"])
-            ngx.say(ngx.req.get_headers()["X-Foo"])
-        ';
+}
+location = /b {
+    content_by_lua_block {
+        ngx.say(ngx.req.get_headers()["User-Agent"])
+        ngx.say(ngx.req.get_headers(nil, true)["X_Foo"])
     }
+}
 --- request
 GET /a
 --- response_body
@@ -135,26 +132,51 @@ bar
 === TEST 4: Test that headers remain unique
 --- http_config eval: $::HttpConfig
 --- config
-    location = /a {
-        content_by_lua '
-            local http_headers = require "resty.http_headers"
+location = /a {
+    content_by_lua_block {
+        local headers = require("resty.http_headers").new()
 
-            local headers = http_headers.new()
+        headers["x-a-header"] = "a"
+        headers["X-A-HEAder"] = "b"
 
-            headers["x-a-header"] = "a"
-            headers["X-A-HEAder"] = "b"
-
-            for k,v in pairs(headers) do
-            ngx.log(ngx.DEBUG, k, ": ", v)
-                ngx.header[k] = v
-            end
-        ';
+        for k,v in pairs(headers) do
+            ngx.header[k] = v
+        end
     }
+}
 --- request
 GET /a
 --- response_headers
 x-a-header: b
 --- no_error_log
 [error]
-[warn]
-[warn]
+
+
+=== TEST 5: Prove header tables are always unique
+--- http_config eval: $::HttpConfig
+--- config
+location = /a {
+    content_by_lua_block {
+        local headers = require("resty.http_headers").new()
+
+        headers["content-length"] = "a"
+        headers["TRANSFER-ENCODING"] = "b"
+        headers["SSL_CLIENT_CERTIFICATE"] = "foo"
+
+        local headers2 = require("resty.http_headers").new()
+
+        assert(headers2 ~= headers,
+            "headers should be unique")
+
+        assert(not next(headers2),
+            "headers2 should be empty")
+
+        assert(not next(getmetatable(headers2).normalised),
+            "headers normalised data should be empty")
+    }
+}
+--- request
+GET /a
+--- response_body
+--- no_error_log
+[error]
